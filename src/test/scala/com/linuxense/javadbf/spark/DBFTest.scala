@@ -12,7 +12,8 @@ class DBFTest extends FunSuite{
     .setAppName("IgniteRDDExample")
     .setMaster("local[2]")
     .set("spark.executor.instances", "2")
-  var path = "file:///D://SJSJG.DBF"
+  val filePath = "file:///D://"
+  var path = filePath+"SJSJG.DBF"
 
   val partitionNum =36
   val charset = Charset.forName("GBK")
@@ -21,9 +22,13 @@ class DBFTest extends FunSuite{
 
   test("dataframe"){
     val filePath = "file:///D://"
+    path = "file:///H://后台业务系统//代码--spark//data//SJSMX10807.DBF"
+   // path = "file:///H://后台业务系统//代码--spark//data//zqye.dbf"
     //path = filePath+"0904保证金日结表.DBF"
     val s = sparkSession.loadAsDF(path,charset,partitionNum)
-    s.show()
+    //s.show()
+    //s.collect()
+    println(s.count())
   }
   test("row"){
     val s = sparkSession.loadAsRowRDD(path,charset,partitionNum)

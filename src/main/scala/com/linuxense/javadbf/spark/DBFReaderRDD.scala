@@ -3,8 +3,7 @@ package com.linuxense.javadbf.spark
 import java.nio.charset.Charset
 
 import com.linuxense.javadbf.spark.Utils._
-import com.linuxense.javadbf.{DBFField, DBFRow}
-
+import com.linuxense.javadbf.{DBFField, DBFRow, DBFSkipRow}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
@@ -91,8 +90,13 @@ class DBFReaderRDD[T: ClassTag, V <: DBFParam](sparkContext: SparkContext,
             if (dbfRow == null) {
               break()
             }
-            val data = conv(reader.getCurrentOffset, reader.getFields, dbfRow, param, runtimeMirror, classMirror, constructorMethod, reflectFields)
-            result += (data)
+            dbfRow match {
+              case e: DBFSkipRow =>
+              case _ =>
+                val data = conv(reader.getCurrentOffset, reader.getFields, dbfRow, param, runtimeMirror, classMirror, constructorMethod, reflectFields)
+                result += (data)
+            }
+
           }
         }
 

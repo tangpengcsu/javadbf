@@ -44,7 +44,7 @@ public class DBFOffsetReader extends DBFReader {
             return null;
         }
         if (record.length == 0) {
-            return nextRow();
+            return new DBFSkipRow(record,mapFieldNames,this.header.fieldArray);
         } else {
             return new DBFRow(record, mapFieldNames, this.header.fieldArray);
         }
