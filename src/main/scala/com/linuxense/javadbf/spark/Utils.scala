@@ -44,20 +44,14 @@ object Utils {
 
 import com.linuxense.javadbf.DBFDataType._
   def dataType(typeName: DBFDataType, scale:Int): DataType = typeName match {
-   // case  CHARACTER ⇒ BooleanType
-/*    case BINARY ⇒ ByteType*/
-/*    case "java.lang.Short" ⇒ ShortType
-    case "java.lang.Integer" ⇒ IntegerType*/
-    case LONG ⇒ LongType
+    /*https://github.com/tangpengcsu/javadbf*/
+    case LONG|AUTOINCREMENT ⇒ IntegerType
     case FLOATING_POINT ⇒ FloatType
     case DOUBLE ⇒ DoubleType
-    case NUMERIC ⇒ DecimalType(DecimalType.MAX_PRECISION, scale)
-    case CHARACTER  ⇒ StringType
-    case VARCHAR ⇒ StringType
-    case CURRENCY ⇒ StringType
-    case DATE ⇒ DateType
-    case TIMESTAMP ⇒ TimestampType
-    case BINARY|VARBINARY ⇒ BinaryType
+    case NUMERIC|CURRENCY ⇒ DecimalType(DecimalType.MAX_PRECISION, scale)
+    case VARCHAR |CHARACTER ⇒ StringType
+    case DATE | TIMESTAMP ⇒ DateType
+    case BINARY|VARBINARY|PICTURE ⇒ BinaryType
     case _ ⇒ StructType(new Array[StructField](0))
   }
   //获取dbf字段注解
