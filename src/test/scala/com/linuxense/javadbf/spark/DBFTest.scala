@@ -42,7 +42,7 @@ class DBFTest extends FunSuite{
     println(s"=====sum:${s.count()}-${col.mkString(",")}")*/
     s.foreachPartition(i=>{
       i.foreach(v=>{
-        println(v)
+        println(v.asInstanceOf[CaseFile])
         //println(v.asInstanceOf[RjbBean].toString)
       })
     })
