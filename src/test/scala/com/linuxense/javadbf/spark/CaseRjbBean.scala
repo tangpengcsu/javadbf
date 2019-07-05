@@ -13,7 +13,7 @@ class CaseFile() extends Serializable {
 
 case class CaseRjbBean(
 
-                        @DBFFieldProp("asset_d003")
+                        @DBFFieldProp(name="asset_d003")
                         var ASSET_D003: BigDecimal, @BeanProperty
                         @DBFFieldProp("item_le000")
                         var item_le000: String,

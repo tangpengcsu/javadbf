@@ -1,6 +1,7 @@
 package com.linuxense.javadbf.spark
 
-import com.linuxense.javadbf.DBFRow
+import com.linuxense.javadbf.{DBFDataType, DBFRow}
+import org.apache.spark.sql.types.{BinaryType, BooleanType, ByteType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, StructField, StructType, TimestampType}
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -39,6 +40,25 @@ object Utils {
       case _=>throw new IllegalArgumentException(s"不支持改反射数据类型：${dataType}")
     }
 
+  }
+
+import com.linuxense.javadbf.DBFDataType._
+  def dataType(typeName: DBFDataType, scale:Int): DataType = typeName match {
+   // case  CHARACTER ⇒ BooleanType
+/*    case BINARY ⇒ ByteType*/
+/*    case "java.lang.Short" ⇒ ShortType
+    case "java.lang.Integer" ⇒ IntegerType*/
+    case LONG ⇒ LongType
+    case FLOATING_POINT ⇒ FloatType
+    case DOUBLE ⇒ DoubleType
+    case NUMERIC ⇒ DecimalType(DecimalType.MAX_PRECISION, scale)
+    case CHARACTER  ⇒ StringType
+    case VARCHAR ⇒ StringType
+    case CURRENCY ⇒ StringType
+    case DATE ⇒ DateType
+    case TIMESTAMP ⇒ TimestampType
+    case BINARY|VARBINARY ⇒ BinaryType
+    case _ ⇒ StructType(new Array[StructField](0))
   }
   //获取dbf字段注解
   def getAnnotationData(tree: Tree) = {

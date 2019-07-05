@@ -34,12 +34,12 @@ class ReflectTest extends FunSuite{
     var fields = baseClass.flatMap(i=>i.asClass.typeSignature.decls).filter(i=>i.isTerm && (i.asTerm.isVar|| i.asTerm.isVal)).map(i=>i.asTerm)
     // fields = typeSignature.decls.filter(i=>i.isTerm&&(i.asTerm.isVal || i.asTerm.isVar)).map(_.asTerm).toList
 
-
+/*
     fields.foreach(i=>{
 
       println(s"${i.name}-${i.owner}-${i.isModule}-${i.isPrivate}-${i.isPrivateThis}-${i.isOverloaded}-${i.isImplementationArtifact}-${i.isCaseAccessor}")
 
-    })
+    })*/
     val gg = fields.groupBy(_.name.decodedName.toString.trim)
     val z= fields.groupBy(_.name.decodedName.toString.trim).map(i=>{
       val f = if(i._2.size>1){
@@ -49,6 +49,9 @@ class ReflectTest extends FunSuite{
       }
       f
     }).flatMap(_.iterator).toList
+    z.foreach(i=>{
+      println(s"${i.name.decodedName.toString.trim}-${i.owner}")
+    })
 
     val instance = ctorm()
     val ref = classMirror.reflect(instance)

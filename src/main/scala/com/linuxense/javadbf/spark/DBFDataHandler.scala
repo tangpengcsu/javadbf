@@ -1,5 +1,7 @@
 package com.linuxense.javadbf.spark
 
+import java.sql.Date
+
 import com.linuxense.javadbf.spark.Utils._
 import com.linuxense.javadbf.{DBFField, DBFFieldNotFoundException, DBFRow}
 import org.apache.spark.sql.Row
@@ -26,10 +28,15 @@ object DBFRowHandler extends DBFDataHandler[DBFOptParam] {
     dBFOptParam.sortBy(_.orderSn).foreach(i => {
       arrayBuffer += i.value
     })
-    for (idx <- 0 until (fields.length)) {
-      arrayBuffer += data.getObject(idx)
-    }
 
+    for (idx <- 0 until (fields.length)) {
+      val od = data.getObject(idx)
+      val v = data.getObject(idx) match {
+        case d: java.util.Date => new Date(d.getTime)
+        case _ => od
+      }
+      arrayBuffer += v
+    }
     val row = Row.fromSeq(arrayBuffer)
     row.asInstanceOf[T]
   }

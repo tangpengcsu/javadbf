@@ -19,6 +19,18 @@ class DBFTest extends FunSuite{
   // Spark context.
   val sparkSession:SparkSession= SparkSession.builder().config(conf).getOrCreate()
 
+  test("dataframe"){
+    val filePath = "file:///D://"
+    //path = filePath+"0904保证金日结表.DBF"
+    val s = sparkSession.loadAsDF(path,charset,partitionNum)
+    s.show()
+  }
+  test("row"){
+    val s = sparkSession.loadAsRowRDD(path,charset,partitionNum)
+    s.foreach(i=>{
+      println(i)
+    })
+  }
   test("read"){
     // path = "file:///D://jsmx13.dbf"
     val filePath = "file:///D://"
@@ -34,7 +46,7 @@ class DBFTest extends FunSuite{
 
      //val s = sparkSession.sparkContext.loadAsRowRDD(path,charset,partitionNum,optParam)
 
-   val s = sparkSession.sparkContext.loadAsBeanRDD[CaseRjbBean](path,charset,partitionNum,optParam)
+   val s = sparkSession.loadAsBeanRDD[CaseRjbBean](path,charset,partitionNum,optParam)
 /* val col= s.mapPartitionsWithIndex((p,d)=>{
 
    List((p,d.size)).iterator
@@ -48,6 +60,13 @@ class DBFTest extends FunSuite{
     })
     println(s"sum:${s.count()}")
     println(s"fdsf:${List(1)}")
+  }
+
+  test("kdfjkajf"){
+    val left = Array(1,2,3)
+    val z = 0 +: left    //List(0,1,2,3)
+    println(z)
+
   }
 
 }

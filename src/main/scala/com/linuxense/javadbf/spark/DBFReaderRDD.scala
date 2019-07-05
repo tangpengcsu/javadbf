@@ -1,13 +1,10 @@
 package com.linuxense.javadbf.spark
 
-import java.net.URI
 import java.nio.charset.Charset
 
 import com.linuxense.javadbf.spark.Utils._
-import com.linuxense.javadbf.{DBFField, DBFOffsetReader, DBFRow}
-import org.apache.commons.io.IOUtils
-import org.apache.hadoop.fs.{FSDataInputStream, FileSystem, Path}
-import org.apache.spark.deploy.SparkHadoopUtil
+import com.linuxense.javadbf.{DBFField, DBFRow}
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
@@ -36,17 +33,11 @@ class DBFReaderRDD[T: ClassTag, V <: DBFParam](sparkContext: SparkContext,
                                                adjustFields: (Array[DBFField]) => Unit) extends RDD[T](sparkContext, deps = Nil) {
   override def compute(split: Partition, context: TaskContext): Iterator[T] = {
     val partition = split.asInstanceOf[DBFPartition]
-    var fs: FileSystem = null
-    var inputStream: FSDataInputStream = null
-    var reader: DBFOffsetReader = null
-    val conf = SparkHadoopUtil.get.conf
-    conf.set("ipc.client.connect.timeout", connectTimeout.toString) //超时时间3S - 3000
-    conf.set("ipc.client.connect.max.retries.on.timeouts", maxRetries.toString) // 重试次数1
-    try {
-      fs = FileSystem.get(URI.create(path), conf, userName)
 
-      inputStream = fs.open(new Path(path))
-      reader = new DBFOffsetReader(inputStream, Charset.forName(charSet), showDeletedRows)
+    val dbfHelper = DBFHelper(path, Charset.forName(charSet), userName, showDeletedRows, connectTimeout, maxRetries)
+    try {
+      dbfHelper.open()
+      val reader = dbfHelper.getReader
 
       adjustFields(reader.getFields()) //调整字段长度
 
@@ -109,9 +100,7 @@ class DBFReaderRDD[T: ClassTag, V <: DBFParam](sparkContext: SparkContext,
       logInfo(s"分区${partition.idx} 读取文件第 ${startOffset} 条至 ${endOffset} 条记录，共读取 ${result.size} 条数据！") //读取记录数小于计划读取数：DBF 中有记录标记未删除
       result.iterator
     } finally {
-      IOUtils.closeQuietly(reader)
-      IOUtils.closeQuietly(inputStream)
-      IOUtils.closeQuietly(fs)
+      dbfHelper.close()
     }
 
 
