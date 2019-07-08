@@ -22,13 +22,13 @@ class DBFTest extends FunSuite{
 
   test("dataframe"){
     val filePath = "file:///D://"
-    path = "file:///H://后台业务系统//代码--spark//data//SJSMX10807.DBF"
-   // path = "file:///H://后台业务系统//代码--spark//data//zqye.dbf"
+    //path = "file:///H://后台业务系统//代码--spark//data//SJSMX10807.DBF"
+   //path = "file:///H://后台业务系统//代码--spark//data//zqye.dbf"
     //path = filePath+"0904保证金日结表.DBF"
     val s = sparkSession.loadAsDF(path,charset,partitionNum)
-    //s.show()
+     s.show()
     //s.collect()
-    println(s.count())
+   // println(s.count())
   }
   test("row"){
     val s = sparkSession.loadAsRowRDD(path,charset,partitionNum)
@@ -59,19 +59,20 @@ class DBFTest extends FunSuite{
     println(s"=====sum:${s.count()}-${col.mkString(",")}")*/
     s.foreachPartition(i=>{
       i.foreach(v=>{
-        println(v.asInstanceOf[CaseFile])
+        println(v)
         //println(v.asInstanceOf[RjbBean].toString)
       })
     })
     println(s"sum:${s.count()}")
-    println(s"fdsf:${List(1)}")
+
   }
 
   test("kdfjkajf"){
-    val left = Array(1,2,3)
-    val z = 0 +: left    //List(0,1,2,3)
-    println(z)
-
+   val s = "zs"
+   s match {
+     case "wa"=>println("===")
+     case "ls"|"zs"=>println("s")
+   }
   }
 
 }

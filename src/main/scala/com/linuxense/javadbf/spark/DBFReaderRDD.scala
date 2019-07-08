@@ -72,7 +72,7 @@ class DBFReaderRDD[T: ClassTag, V <: DBFParam](sparkContext: SparkContext,
             }
           }).flatMap(_.iterator)
           .map(i => {
-            val fieldAnn = i.asTerm.annotations.find(_.tree.tpe =:= ru.typeOf[DBFFieldProp])
+            val fieldAnn = i.asTerm.annotations.find(_.tree.tpe =:= ru.typeOf[Column])
             val ann = if (fieldAnn.isDefined) {
               Some(getAnnotationData(fieldAnn.get.tree).name)
             } else {

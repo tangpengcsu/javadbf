@@ -3,7 +3,7 @@ package com.linuxense.javadbf.spark
 import java.sql.Date
 
 import com.linuxense.javadbf.spark.Utils._
-import com.linuxense.javadbf.{DBFField, DBFFieldNotFoundException, DBFRow}
+import com.linuxense.javadbf.{DBFDataType, DBFField, DBFFieldNotFoundException, DBFRow}
 import org.apache.spark.sql.Row
 
 import scala.collection.mutable.ArrayBuffer
@@ -30,11 +30,13 @@ object DBFRowHandler extends DBFDataHandler[DBFOptParam] {
     })
 
     for (idx <- 0 until (fields.length)) {
-      val od = data.getObject(idx)
-      val v = data.getObject(idx) match {
-        case d: java.util.Date => new Date(d.getTime)
-        case _ => od
+      val oldData = data.getObject(idx)
+      val v = fields(idx).getType match {
+        case DBFDataType.DATE | DBFDataType.TIMESTAMP if (oldData != null) =>
+          new Date(oldData.asInstanceOf[java.util.Date].getTime)
+        case _ => oldData
       }
+
       arrayBuffer += v
     }
     val row = Row.fromSeq(arrayBuffer)

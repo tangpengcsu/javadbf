@@ -13,13 +13,13 @@ class CaseFile() extends Serializable {
 
 case class CaseRjbBean(
 
-                        @DBFFieldProp(name="asset_d003")
+                        @Column(name="asset_d003")
                         var ASSET_D003: BigDecimal, @BeanProperty
-                        @DBFFieldProp("item_le000")
+                        @Column("item_le000")
                         var item_le000: String,
-                        @DBFFieldProp("asset_l001")
+                        @Column("asset_l001")
                         var asset_l001: BigDecimal,
-                        var incomepay: BigDecimal, @DBFFieldProp("item_de002")
+                        var incomepay: BigDecimal, @Column("item_de002")
                         val ITEM_DE002: String) extends CaseFile() {
 
   override val sn:Long =1

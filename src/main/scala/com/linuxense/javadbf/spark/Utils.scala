@@ -57,8 +57,8 @@ import com.linuxense.javadbf.DBFDataType._
   //获取dbf字段注解
   def getAnnotationData(tree: Tree) = {
     val Apply(_, Literal(Constant(name: String)) :: Nil) = tree
-    new DBFFieldProp(name)
-  }
+    new Column(name)
+}
   // 获取指定类型的注解信息，通过 Annotation.tree.tpe 获取注解的 Type 类型，以此进行筛选
   def getClassAnnotation[T: TypeTag, U: TypeTag] =
     symbolOf[T].annotations.find(_.tree.tpe =:= typeOf[U])
