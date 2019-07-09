@@ -1,11 +1,15 @@
 package com.linuxense.javadbf.spark
 
+import java.io.File
 import java.nio.charset.Charset
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.scalatest.FunSuite
 import com.linuxense.javadbf.spark._
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 class DBFTest extends FunSuite{
 
   val conf = new SparkConf()
@@ -21,21 +25,62 @@ class DBFTest extends FunSuite{
   val sparkSession:SparkSession= SparkSession.builder().config(conf).getOrCreate()
 
   test("dataframe"){
-    val filePath = "file:///D://"
+
     //path = "file:///H://后台业务系统//代码--spark//data//SJSMX10807.DBF"
    //path = "file:///H://后台业务系统//代码--spark//data//zqye.dbf"
     //path = filePath+"0904保证金日结表.DBF"
+    path = filePath+"users//tangp//Documents//后台业务系统//svn//2.DevelopmentDoc//2.1CustomerRequirement//业务梳理--整合版//清算文件//股息红利差别化扣税//20160426//zsmx.dbf"
+    path =  "file:///D://users//tangp//Documents//后台业务系统//svn//2.DevelopmentDoc//2.1CustomerRequirement//业务梳理--整合版//清算文件//ETF//深A_跨市场ETF//跨市场ETF(实物)//申购//t+2//sjsjg0611_深登优化2期前.dbf"
     val s = sparkSession.loadAsDF(path,charset,partitionNum)
      s.show()
+    s.printSchema()
     //s.collect()
    // println(s.count())
+  }
+
+  def getDBF(dirctory:File,dbfFileMap:mutable.Map[String,File]): mutable.Map[String,File] ={
+    if(dirctory.isFile && (dirctory.getName.endsWith(".dbf")|| dirctory.getName.endsWith(".DBF")) ){
+      dbfFileMap += ("file:///"+dirctory.toString.replace("\\","//") ->dirctory)
+    }else if(dirctory.isDirectory){
+      dirctory.listFiles().foreach(f=>{
+        getDBF(f,dbfFileMap)
+      })
+    }
+    dbfFileMap
+  }
+
+
+  test("dirctory"){
+    val base = new File("D:\\users\\tangp\\Documents\\后台业务系统\\svn\\2.DevelopmentDoc\\2.1CustomerRequirement\\业务梳理--整合版\\清算文件")
+    val result  = mutable.Map[String,File]()
+    getDBF(base,result)
+    val successFiles = mutable.Map[String,Long]()
+    val failedFiles = mutable.ListBuffer[String]()
+    result.foreach(path=>{
+      try {
+        val s = sparkSession.loadAsDF(path._1, charset, partitionNum)
+        successFiles += (path._1->s.count())
+
+      } catch {
+        case e:Exception =>
+          e.printStackTrace()
+          failedFiles += (path._1)
+
+      }
+    })
+    println(s"共${result.size}个文件：")
+    println(s"读取成功${successFiles.size}个：${successFiles}")
+    println(s"读取失败${failedFiles.size}个：${failedFiles.mkString(",")}")
   }
   test("row"){
     val s = sparkSession.loadAsRowRDD(path,charset,partitionNum)
     s.foreach(i=>{
-      println(i)
+
+    println(i)
     })
   }
+
+
   test("read"){
     // path = "file:///D://jsmx13.dbf"
     val filePath = "file:///D://"

@@ -9,7 +9,6 @@ import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.{Partition, SparkContext}
 
-import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 class DBFFunctions(@transient val sparkSession:SparkSession) extends Serializable {
@@ -43,7 +42,7 @@ class DBFFunctions(@transient val sparkSession:SparkSession) extends Serializabl
       DBFPartition(_).asInstanceOf[Partition]
     } toArray
 
-    new DBFReaderRDD[Row, DBFOptParam](sparkSession.sparkContext, path, DBFRowHandler.process[Row], chasrset.name(), showDeletedRows, userName, connectionTimeout, maxRetries, partitions, param, Row.getClass, defaultAdjustLength)
+    new DBFReaderRDD[Row, DBFOptParam, DBFRowTransferParam,DBFRowHandler](sparkSession.sparkContext, path, DBFRowHandler(), chasrset.name(), showDeletedRows, userName, connectionTimeout, maxRetries, partitions, param, Row.getClass)
   }
 
   def loadAsBeanRDD[T: ClassTag](path: String,
@@ -58,9 +57,9 @@ class DBFFunctions(@transient val sparkSession:SparkSession) extends Serializabl
       DBFPartition(_).asInstanceOf[Partition]
     } toArray
 
-    val clazz = getClazz[T]()
-
-    new DBFReaderRDD[Any, DBFOptDFParam](sparkSession.sparkContext, path, DBFBeanHandler.process[T], chasrset.name(), showDeletedRows, userName, connectionTimeout, maxRetries, partitions, param, clazz, defaultAdjustLength).asInstanceOf[RDD[T]]
+    val m = implicitly[ClassTag[T]]
+    val clazz = m.runtimeClass.asInstanceOf[Class[T]]
+    new DBFReaderRDD[Any, DBFOptDFParam, DBFBeanTransferParam,DBFBeanHandler](sparkSession.sparkContext, path, DBFBeanHandler(), chasrset.name(), showDeletedRows, userName, connectionTimeout, maxRetries, partitions, param, clazz).asInstanceOf[RDD[T]]
   }
 
 
@@ -74,10 +73,6 @@ class DBFFunctions(@transient val sparkSession:SparkSession) extends Serializabl
       f.setLength(50)
       fields(idx) = f
     }
-  }
-
-  def defaultAdjustLength(fields: Array[DBFField]) = {
-
   }
 
   private[this] def buildSchema(fields:Array[DBFField],snName:String): StructType ={

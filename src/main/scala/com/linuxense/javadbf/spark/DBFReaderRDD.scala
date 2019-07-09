@@ -18,18 +18,18 @@ case class DBFPartition(idx: Int) extends Partition {
 
 }
 
-class DBFReaderRDD[T: ClassTag, V <: DBFParam](sparkContext: SparkContext,
-                                               path: String,
-                                               conv: (Int, Array[DBFField], DBFRow, List[V], ru.RuntimeMirror, ru.ClassMirror, ru.MethodMirror, Iterable[Tuple2[ru.TermSymbol, Option[String]]]) => T,
-                                               charSet: String,
-                                               showDeletedRows: Boolean,
-                                               userName: String,
-                                               connectTimeout: Int,
-                                               maxRetries: Int,
-                                               partitions: Array[Partition],
-                                               param: List[V] = Nil,
-                                               clazz: Class[_],
-                                               adjustFields: (Array[DBFField]) => Unit) extends RDD[T](sparkContext, deps = Nil) {
+class DBFReaderRDD[T: ClassTag, V <: DBFParam, F <: DBFTransferParam, H <: DBFDataHandler[V, F]](sparkContext: SparkContext,
+                                                                                                 path: String,
+                                                                                                 handler: H,
+                                                                                                 charSet: String,
+                                                                                                 showDeletedRows: Boolean,
+                                                                                                 userName: String,
+                                                                                                 connectTimeout: Int,
+                                                                                                 maxRetries: Int,
+                                                                                                 partitions: Array[Partition],
+                                                                                                 param: List[V] = Nil,
+                                                                                                 clazz: Class[_])
+  extends RDD[T](sparkContext, deps = Nil) {
   override def compute(split: Partition, context: TaskContext): Iterator[T] = {
     val partition = split.asInstanceOf[DBFPartition]
 
@@ -37,8 +37,7 @@ class DBFReaderRDD[T: ClassTag, V <: DBFParam](sparkContext: SparkContext,
     try {
       dbfHelper.open()
       val reader = dbfHelper.getReader
-
-      adjustFields(reader.getFields()) //调整字段长度
+      handler.adjustFields(reader.getFields)//调整字段长度
 
       val recoderCount = reader.getRecordCount
 
@@ -50,38 +49,7 @@ class DBFReaderRDD[T: ClassTag, V <: DBFParam](sparkContext: SparkContext,
         reader.setStartOffset(startOffset)
         reader.partitionIdx = partition.idx
         reader.setEndOffset(endOffset)
-        val runtimeMirror = ru.runtimeMirror(getClass.getClassLoader) //获取运行时类镜像
-        val classMirror = runtimeMirror.reflectClass(runtimeMirror.classSymbol(clazz))
-        val typeSignature = classMirror.symbol.typeSignature
-        val theOwner = typeSignature.typeSymbol
-
-        val constructorSymbol = typeSignature.decl(ru.termNames.CONSTRUCTOR)
-          .filter(i => i.asMethod.paramLists.flatMap(_.iterator).isEmpty)
-          .asMethod
-        val constructorMethod = classMirror.reflectConstructor(constructorSymbol)
-        //包含父类字段
-        val reflectFields = typeSignature.baseClasses
-          .flatMap(i => i.asClass.typeSignature.decls)
-          .filter(i => i.isTerm && (i.asTerm.isVar || i.asTerm.isVal))
-          .groupBy(_.name.decodedName.toString.trim)
-          .map(i => {
-            if (i._2.size > 1) {
-              i._2.filter(_.owner == theOwner)
-            } else {
-              i._2
-            }
-          }).flatMap(_.iterator)
-          .map(i => {
-            val fieldAnn = i.asTerm.annotations.find(_.tree.tpe =:= ru.typeOf[Column])
-            val ann = if (fieldAnn.isDefined) {
-              Some(getAnnotationData(fieldAnn.get.tree).name)
-            } else {
-              logWarning(s"类 ${clazz.getName} 的字段 ${i.name} 未定义注解!")
-              None
-            }
-            Tuple2(i.asTerm, ann)
-          })
-
+        val transferParam = handler.buildParam(clazz)
         var dbfRow: DBFRow = null
 
         breakable {
@@ -93,7 +61,7 @@ class DBFReaderRDD[T: ClassTag, V <: DBFParam](sparkContext: SparkContext,
             dbfRow match {
               case e: DBFSkipRow =>
               case _ =>
-                val data = conv(reader.getCurrentOffset, reader.getFields, dbfRow, param, runtimeMirror, classMirror, constructorMethod, reflectFields)
+                val data = handler.transfer[T](reader.getCurrentOffset, reader.getFields, dbfRow, param,transferParam)
                 result += (data)
             }
 
