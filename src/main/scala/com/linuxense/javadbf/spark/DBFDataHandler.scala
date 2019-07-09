@@ -26,11 +26,14 @@ sealed trait DBFDataHandler[V <: DBFParam, F <: DBFTransferParam] extends Serial
 
 }
 
-case class DBFRowHandler() extends DBFDataHandler[DBFOptParam, DBFRowTransferParam] {
-
-  override def buildParam(clazz: Class[_]): DBFRowTransferParam = {
-    null
+abstract class DBFDefaultHandler[V <: DBFParam, F <: DBFTransferParam] extends DBFDataHandler[V, F] {
+  override def buildParam(clazz: Class[_]): F = {
+    null.asInstanceOf[F]
   }
+}
+
+case class DBFRowHandler() extends DBFDefaultHandler[DBFOptParam, DBFRowTransferParam] {
+
 
   override def transfer[T](offset: Int,
                            fields: Array[DBFField],
@@ -58,11 +61,7 @@ case class DBFRowHandler() extends DBFDataHandler[DBFOptParam, DBFRowTransferPar
   }
 }
 
-case class DBFRowOrderHandler() extends DBFDataHandler[DBFOptParam, DBFRowTransferParam] {
-
-  override def buildParam(clazz:Class[_]): DBFRowTransferParam = {
-    null
-  }
+case class DBFRowOrderHandler() extends DBFDefaultHandler[DBFOptParam, DBFRowTransferParam] {
 
 
   override def transfer[T](offset: Int,
@@ -86,7 +85,7 @@ case class DBFRowOrderHandler() extends DBFDataHandler[DBFOptParam, DBFRowTransf
 
 case class DBFBeanHandler() extends DBFDataHandler[DBFOptDFParam, DBFBeanTransferParam] {
 
-  override def buildParam(clazz:Class[_]): DBFBeanTransferParam = {
+  override def buildParam(clazz: Class[_]): DBFBeanTransferParam = {
 
     val runtimeMirror = ru.runtimeMirror(getClass.getClassLoader) //获取运行时类镜像
     val classMirror = runtimeMirror.reflectClass(runtimeMirror.classSymbol(clazz))
@@ -119,14 +118,14 @@ case class DBFBeanHandler() extends DBFDataHandler[DBFOptDFParam, DBFBeanTransfe
         }
         Tuple2(i.asTerm, ann)
       })
-    DBFBeanTransferParam(runtimeMirror,classMirror,constructorMethod,reflectFields)
+    DBFBeanTransferParam(runtimeMirror, classMirror, constructorMethod, reflectFields)
   }
 
   override def transfer[T](offset: Int,
                            fields: Array[DBFField],
                            data: DBFRow,
                            dBFOptParam: List[DBFOptDFParam],
-                           transferParam:DBFBeanTransferParam
+                           transferParam: DBFBeanTransferParam
                           ): T = {
 
     val instance = transferParam.constructor()
