@@ -18,17 +18,17 @@ case class DBFPartition(idx: Int) extends Partition {
 
 }
 
-class DBFReaderRDD[T: ClassTag, V <: DBFParam, F <: DBFTransferParam, H <: DBFDataHandler[V, F]](sparkContext: SparkContext,
-                                                                                                 path: String,
-                                                                                                 handler: H,
-                                                                                                 charSet: String,
-                                                                                                 showDeletedRows: Boolean,
-                                                                                                 userName: String,
-                                                                                                 connectTimeout: Int,
-                                                                                                 maxRetries: Int,
-                                                                                                 partitions: Array[Partition],
-                                                                                                 param: List[V] = Nil,
-                                                                                                 clazz: Class[_])
+class DBFReaderRDD[T: ClassTag, V <: DBFParam, F <: DBFTransferParam](sparkContext: SparkContext,
+                                                                      path: String,
+                                                                      handler: DBFDataHandler[V, F],
+                                                                      charSet: String,
+                                                                      showDeletedRows: Boolean,
+                                                                      userName: String,
+                                                                      connectTimeout: Int,
+                                                                      maxRetries: Int,
+                                                                      partitions: Array[Partition],
+                                                                      param: List[V] = Nil,
+                                                                      clazz: Class[_])
   extends RDD[T](sparkContext, deps = Nil) {
   override def compute(split: Partition, context: TaskContext): Iterator[T] = {
     val partition = split.asInstanceOf[DBFPartition]
@@ -37,7 +37,7 @@ class DBFReaderRDD[T: ClassTag, V <: DBFParam, F <: DBFTransferParam, H <: DBFDa
     try {
       dbfHelper.open()
       val reader = dbfHelper.getReader
-      handler.adjustFields(reader.getFields)//调整字段长度
+      handler.adjustFields(reader.getFields) //调整字段长度
 
       val recoderCount = reader.getRecordCount
 
@@ -61,7 +61,7 @@ class DBFReaderRDD[T: ClassTag, V <: DBFParam, F <: DBFTransferParam, H <: DBFDa
             dbfRow match {
               case e: DBFSkipRow =>
               case _ =>
-                val data = handler.transfer[T](reader.getCurrentOffset, reader.getFields, dbfRow, param,transferParam)
+                val data = handler.transfer[T](reader.getCurrentOffset, reader.getFields, dbfRow, param, transferParam)
                 result += (data)
             }
 
